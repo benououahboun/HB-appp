@@ -8,8 +8,9 @@
   },
   "build": {
     "appId": "com.gbov.app",
+    "publish": null,
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": ["dmg"],
       "category": "public.app-category.business",
       "identity": null
     }
