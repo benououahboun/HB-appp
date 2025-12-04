@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haloub App</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+            z-index: 9999;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #fff3377;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-container {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+        }
+        
+        .retry-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .retry-button:hover {
+            background: #2980b9;
+        }
+        
+        webview {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            background: white;
+        }
+        
+        .app-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* Styles pour améliorer la compatibilité avec les inputs et iframes */
+        .webview-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Écran de chargement -->
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Chargement de l'application Haloub...</p>
+                <small>Connexion à soussdev.atwebpages.com</small>
+            </div>
+        </div>
+
+        <!-- Conteneur de l'application web -->
+        <div class="webview-container" id="webviewContainer" style="display: none;">
+            <webview 
+                id="webview" 
+                src="http://soussdev.atwebpages.com/AAGB/"
+                allowpopups
+                webpreferences="allowRunningInsecureContent=false, javascript=true, webSecurity=true, contextIsolation=false"
+            ></webview>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const webview = document.getElementById('webview');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const webviewContainer = document.getElementById('webviewContainer');
+
+        let isLoaded = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        // Fonction pour afficher l'erreur
+        function showError(message) {
+            loadingContainer.innerHTML = `
+                <div class="error-container">
+                    <h3>❌ Erreur de connexion</h3>
+                    <p>${message}</p>
+                    <p><small>Tentative ${retryCount}/${maxRetries}</small></p>
+                    ${retryCount < maxRetries ? 
+                        '<button class="retry-button" onclick="retryConnection()">Réessayer</button>' : 
+                        '<p>Veuillez vérifier votre connexion internet et redémarrer l\'application.</p>'
+                    }
+                </div>
+            `;
+        }
+
+        // Fonction pour réessayer la connexion
+        function retryConnection() {
+            if (retryCount < maxRetries) {
+                retryCount++;
+                loadingContainer.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Nouvelle tentative de connexion...</p>
+                        <small>Tentative ${retryCount}/${maxRetries}</small>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    webview.reload();
+                }, 1000);
+            }
+        }
+
+        // Gérer le chargement réussi
+        webview.addEventListener('dom-ready', () => {
+            console.log('WebView DOM ready');
+            
+            // Injecter du CSS pour optimiser l'affichage
+            webview.insertCSS(`
+                /* Assurer que les inputs fonctionnent correctement */
+                input, textarea, select, button {
+                    -webkit-user-select: text !important;
+                    user-select: text !important;
+                    pointer-events: auto !important;
+                    -webkit-touch-callout: default !important;
+                    -webkit-user-drag: auto !important;
+                }
+                
+                /* Assurer que les iframes fonctionnent */
+                iframe {
+                    pointer-events: auto !important;
+                    border: 0;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                /* Optimisations pour l'affichage */
+                body {
+                    margin: 0;
+                    padding: 0;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                }
+                
+                /* Permettre la sélection de texte */
+                * {
+                    -webkit-user-select: text !important;
+                    user-select: text !important;
+                }
+                
+                /* Styles pour les liens */
+                a {
+                    pointer-events: auto !important;
+                }
+                
+                /* Assurer que les formulaires fonctionnent */
+                form, fieldset, legend {
+                    pointer-events: auto !important;
+                }
+            `);
+            
+            setTimeout(() => {
+                if (!isLoaded) {
+                    isLoaded = true;
+                    loadingContainer.style.display = 'none';
+                    webviewContainer.style.display = 'block';
+                    console.log('Application loaded successfully');
+                }
+            }, 500);
+        });
+
+        // Gérer les erreurs de chargement
+        webview.addEventListener('did-fail-load', (event) => {
+            console.error('Failed to load:', event);
+            if (event.errorCode !== -3 && event.errorCode !== -27) { // -3 = ABORTED, -27 = BLOCKED_BY_CLIENT
+                showError(`Impossible de charger l'application (Code: ${event.errorCode})`);
+            }
+        });
+
+        // Gérer les erreurs réseau
+        webview.addEventListener('did-fail-provisional-load', (event) => {
+            console.error('Provisional load failed:', event);
+            showError('Erreur de connexion réseau. Vérifiez votre connexion internet.');
+        });
+
+        // Gérer les nouveaux onglets/GBovs
+        webview.addEventListener('new-window', (event) => {
+            console.log('New window requested:', event.url);
+            require('electron').shell.openExternal(event.url);
+        });
+
+        // Gérer les changements de titre
+        webview.addEventListener('page-title-updated', (event) => {
+            document.title = event.title + ' - Haloub App';
+        });
+
+        // Gérer le début du chargement
+        webview.addEventListener('did-start-loading', () => {
+            console.log('Started loading...');
+        });
+
+        // Gérer la fin du chargement
+        webview.addEventListener('did-stop-loading', () => {
+            console.log('Stopped loading');
+        });
+
+        // Gérer les messages de la console de la page web
+        webview.addEventListener('console-message', (event) => {
+            console.log('WebView console:', event.message);
+        });
+
+        // Timeout de sécurité
+        setTimeout(() => {
+            if (!isLoaded) {
+                showError('Délai de connexion dépassé. L\'application met trop de temps à répondre.');
+            }
+        }, 15000); // 15 secondes
+
+        // Exposer la fonction retryConnection globalement
+        window.retryConnection = retryConnection;
+    </script>
+</body>
+</html>
