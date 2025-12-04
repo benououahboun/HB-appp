@@ -1,62 +1,21 @@
 {
-  "name": "GBov-app",
+  "name": "GBov",
   "version": "1.0.0",
-  "description": "Application GBov packagée avec Electron",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "electron-builder --mac",
-    "build:mac-dmg": "electron-builder --mac dmg",
-    "build:mac-arm": "electron-builder --mac --arm64",
-    "build:mac-intel": "electron-builder --mac --x64",
-    "build:mac-universal": "electron-builder --mac --universal",
-    "dist": "npm run build:mac"
-  },
-  "keywords": [
-    "electron",
-    "GBov"
-  ],
-  "author": "Votre nom",
-  "license": "MIT",
-  "devDependencies": {
-    "electron": "^32.3.3",
-    "electron-builder": "^25.1.8"
+    "build:mac": "electron-builder --mac"
   },
   "build": {
     "appId": "com.gbov.app",
-    "productName": "GBov",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "index.html",
-      "icon/**/*",
-      "app/**/*"
-    ],
     "mac": {
-      "icon": "icon/icon.icns",
-      "category": "public.app-category.productivity",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.business",
+      "identity": null
     }
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
   }
 }
